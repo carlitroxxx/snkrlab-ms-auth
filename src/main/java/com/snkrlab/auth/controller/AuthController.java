@@ -20,14 +20,26 @@ public class AuthController {
     public PerfilUsuarioDTO perfil(@AuthenticationPrincipal Jwt jwt) {
         String id = jwt.getClaimAsString("oid");
         String nombre = jwt.getClaimAsString("name");
-        String email = jwt.hasClaim("preferred_username")
-                ? jwt.getClaimAsString("preferred_username")
-                : jwt.getClaimAsString("email");
+        String email = jwt.getClaimAsString("email");
+
+        if (email == null || email.isBlank()) {
+            email = jwt.getClaimAsString("preferred_username");
+        }
+
+        if (email == null || email.isBlank()) {
+            email = jwt.getClaimAsString("upn");
+        }
 
         List<String> roles = jwt.hasClaim("roles")
                 ? (List<String>) jwt.getClaim("roles")
                 : Collections.emptyList();
 
+        System.out.println("preferred_username: "
+                + jwt.getClaimAsString("preferred_username"));
+        System.out.println("email: "
+                + jwt.getClaimAsString("email"));
+        System.out.println("upn: "
+                + jwt.getClaimAsString("upn"));
         return new PerfilUsuarioDTO(id, nombre, email, roles);
     }
 
