@@ -1,25 +1,43 @@
 package com.snkrlab.auth.controller;
 
-import java.util.Collections;
 import java.util.List;
 
+import com.snkrlab.auth.dto.PerfilUsuarioDTO;
+import com.snkrlab.auth.service.CognitoPerfilService;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.snkrlab.auth.dto.PerfilUsuarioDTO;
-
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-    @SuppressWarnings("unchecked")
+    private final CognitoPerfilService cognitoPerfilService;
+    private final String cognitoIssuer;
+
+    public AuthController(
+            CognitoPerfilService cognitoPerfilService,
+            @Value("${app.seguridad.cognito-issuer}") String cognitoIssuer) {
+
+        this.cognitoPerfilService = cognitoPerfilService;
+        this.cognitoIssuer = cognitoIssuer;
+    }
+
     @GetMapping("/perfil")
     public PerfilUsuarioDTO perfil(@AuthenticationPrincipal Jwt jwt) {
+        String emisor = jwt.getClaimAsString("iss");
+
+        if (cognitoIssuer.equals(emisor)) {
+            return cognitoPerfilService.obtenerPerfil(jwt);
+        }
+
         String id = jwt.getClaimAsString("oid");
         String nombre = jwt.getClaimAsString("name");
+
         String email = jwt.getClaimAsString("email");
 
         if (email == null || email.isBlank()) {
@@ -30,16 +48,12 @@ public class AuthController {
             email = jwt.getClaimAsString("upn");
         }
 
-        List<String> roles = jwt.hasClaim("roles")
-                ? (List<String>) jwt.getClaim("roles")
-                : Collections.emptyList();
+        List<String> roles = jwt.getClaimAsStringList("roles");
 
-        System.out.println("preferred_username: "
-                + jwt.getClaimAsString("preferred_username"));
-        System.out.println("email: "
-                + jwt.getClaimAsString("email"));
-        System.out.println("upn: "
-                + jwt.getClaimAsString("upn"));
+        if (roles == null) {
+            roles = List.of();
+        }
+
         return new PerfilUsuarioDTO(id, nombre, email, roles);
     }
 
