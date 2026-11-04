@@ -1,11 +1,11 @@
 # snkrlab-ms-auth
 
-Microservicio de autenticación del sistema **SNKRLAB**. No mantiene usuarios propios: valida los tokens JWT emitidos por **Azure AD (Microsoft Entra ID)** y expone la información del usuario autenticado a partir de los claims del token.
+Microservicio de autenticación del sistema **SNKRLAB**. No mantiene usuarios propios: la implementación original valida JWT de **Azure AD (Microsoft Entra ID)** y la EV2 incorpora **Amazon Cognito**; expone la información del usuario autenticado a partir de los claims del token.
 
 ## Herramientas
 
 - Java 21 · Spring Boot 4.1.1
-- Spring Security + OAuth2 Resource Server (validación de JWT contra Azure AD)
+- Spring Security + OAuth2 Resource Server (integración Azure AD y Cognito)
 - Lombok
 - Docker
 
@@ -56,9 +56,16 @@ Base path: `/api/v1/auth`
 
 ## Seguridad
 
-- CORS habilitado solo para `http://localhost:5173` (ajustar en `SecurityConfig` según el origen real del frontend desplegado).
+- Revisar orígenes CORS de `SecurityConfig` según el frontend local o desplegado; evitar orígenes comodín en AWS.
 - Todas las rutas requieren JWT válido excepto `/api/v1/auth/public`.
 
 ## Despliegue
 
 Se despliega en una instancia EC2 (contenedor Docker) y quedar expuesto mediante rutas explícitas de AWS API Gateway (`GET /api/v1/auth/public`, `GET /api/v1/auth/perfil`).
+
+## Actualización EV2 — autenticación y perfiles
+
+- La aplicación incorpora **Amazon Cognito** además de los componentes de Azure AD heredados de EV1. La configuración de ambos proveedores debe revisarse antes de cada despliegue.
+- `GET /api/v1/auth/perfil` obtiene la información de identidad del usuario autenticado; `GET /api/v1/auth/public` permanece público.
+- El frontend maneja los roles **Cliente** y **Administrador**. La protección de recursos debe validarse también en backend, no solo ocultando vistas.
+- **Pendiente posterior a EV2:** adaptar la función Lambda del profesor e incorporar autorización en API Gateway. No se documenta como completada.
