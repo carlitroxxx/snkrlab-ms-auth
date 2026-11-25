@@ -1,0 +1,19 @@
+services:
+  ms-auth:
+    build: .
+    container_name: snkrlab-ms-auth
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      AZURE_ISSUER_URI: https://login.microsoftonline.com/
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID:?Falta AZURE_TENANT_ID}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID:?Falta AZURE_CLIENT_ID}
+      COGNITO_ISSUER: ${COGNITO_ISSUER:?Falta COGNITO_ISSUER}
+      COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID:?Falta COGNITO_CLIENT_ID}
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true -Xms64m -Xmx256m"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
